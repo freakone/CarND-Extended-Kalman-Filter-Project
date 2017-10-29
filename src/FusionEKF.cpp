@@ -115,21 +115,23 @@ void FusionEKF::ProcessMeasurement(const MeasurementPackage &measurement_pack) {
     double const dt = (measurement_pack.timestamp_ - previous_timestamp_) / 1000000.0;
     previous_timestamp_ = measurement_pack.timestamp_;
 
-    double const dt2 = dt * dt;
-    double const dt3 = dt2 * dt;
-    double const dt4 = dt3 * dt;
+    if(dt > 0.001)
+    {
+        double const dt2 = dt * dt;
+        double const dt3 = dt2 * dt;
+        double const dt4 = dt3 * dt;
 
-    ekf_.F_(0, 2) = dt;
-    ekf_.F_(1, 3) = dt;
+        ekf_.F_(0, 2) = dt;
+        ekf_.F_(1, 3) = dt;
 
-    ekf_.Q_ = MatrixXd(4, 4);
-    ekf_.Q_ <<  dt4 / 4 * noise_ax_, 0, dt3 / 2 * noise_ax_, 0,
-            0, dt4 / 4 * noise_ay_, 0, dt3 / 2 * noise_ay_,
-            dt3 / 2 * noise_ax_, 0, dt2*noise_ax_, 0,
-            0, dt3 / 2 * noise_ay_, 0, dt2*noise_ay_;
+        ekf_.Q_ = MatrixXd(4, 4);
+        ekf_.Q_ <<  dt4 / 4 * noise_ax_, 0, dt3 / 2 * noise_ax_, 0,
+                0, dt4 / 4 * noise_ay_, 0, dt3 / 2 * noise_ay_,
+                dt3 / 2 * noise_ax_, 0, dt2*noise_ax_, 0,
+                0, dt3 / 2 * noise_ay_, 0, dt2*noise_ay_;
 
-    ekf_.Predict();
-
+        ekf_.Predict();
+    }
     /*****************************************************************************
      *  Update
      ****************************************************************************/

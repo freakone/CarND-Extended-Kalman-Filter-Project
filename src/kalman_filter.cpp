@@ -16,14 +16,21 @@ void KalmanFilter::Predict() {
     x_ = F_ * x_;
 }
 
-void KalmanFilter::Update(const VectorXd &z) {
-    MatrixXd y = z - H_ * x_;
-    MatrixXd S = H_* P_ * H_.transpose() + R_laser_;
-    MatrixXd K = P_ * H_.transpose() * S.inverse();
+void KalmanFilter::RecalculateParameters(const MatrixXd &R, const MatrixXd &H, const VectorXd &y)
+{
+    MatrixXd P_Ht = P_ * H.transpose();
+    MatrixXd S = H * P_Ht + R;
+    MatrixXd K = P_Ht * S.inverse();
 
     x_ = x_ + K * y;
     MatrixXd I = MatrixXd::Identity(x_.size(), x_.size());
-    P_ = (I  - K * H_) * P_;
+    P_ = (I  - K * H) * P_;
+}
+
+void KalmanFilter::Update(const VectorXd &z) {
+
+    VectorXd y = z - H_ * x_;
+    RecalculateParameters(R_laser_, H_, y);
 }
 
 void KalmanFilter::UpdateEKF(const VectorXd &z) {
@@ -48,11 +55,5 @@ void KalmanFilter::UpdateEKF(const VectorXd &z) {
         y(1) += M_PI ;
     }
 
-    MatrixXd Ht = Hj_.transpose();
-    MatrixXd S = Hj_ * P_ * Ht + R_radar_;
-    MatrixXd K = P_ * Ht * S.inverse();
-
-    x_ = x_ + K * y;
-    MatrixXd I = MatrixXd::Identity( x_.size(),  x_.size() );
-    P_ = (I - K * Hj_) * P_;
+    RecalculateParameters(R_radar_, Hj_, y);
 }
